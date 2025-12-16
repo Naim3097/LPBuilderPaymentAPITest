@@ -453,9 +453,9 @@ const Sidebar = ({ activeTab, setActiveTab }) => {
 
     return (
         <div className="sidebar-nav">
-            <div className="mb-8 text-white text-xl font-black tracking-tighter cursor-default">
+            <a href="index.html" className="mb-8 text-white text-xl font-black tracking-tighter cursor-pointer hover:opacity-80 transition-opacity block no-underline">
                 X.IDE
-            </div>
+            </a>
             <div className="flex flex-col gap-4 w-full items-center">
                 {menuItems.map(item => (
                     <button

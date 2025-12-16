@@ -3,51 +3,225 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Canvas Builder - Sales Ecosystem</title>
-    
-    <!-- Tailwind CSS -->
+    <title>X.IDE - Professional Landing Page Builder</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- React & ReactDOM -->
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-    
-    <!-- Babel for JSX -->
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    
-    <!-- Icons -->
-    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
-
-    <!-- Custom Styles -->
     <link rel="stylesheet" href="style.css">
-
     <style>
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #f1f1f1; 
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #c1c1c1; 
-            border-radius: 3px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #a8a8a8; 
+        /* Microsoft-like Design System Overrides */
+        body {
+            font-family: 'Segoe UI', 'Inter', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+            background-color: #ffffff;
+            color: #1a1a1a;
+            -webkit-font-smoothing: antialiased;
         }
         
-        .canvas-area {
-            background-image: radial-gradient(#e5e7eb 1px, transparent 1px);
-            background-size: 20px 20px;
+        /* Typography */
+        h1, h2, h3, h4, h5, h6 {
+            font-weight: 600;
+            letter-spacing: -0.02em;
+        }
+        
+        /* Buttons */
+        .btn-primary {
+            background-color: #1a1a1a;
+            color: white;
+            padding: 10px 24px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 15px;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid transparent;
+        }
+        .btn-primary:hover {
+            background-color: #333;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .btn-secondary {
+            background-color: white;
+            color: #1a1a1a;
+            border: 1px solid #e2e8f0;
+            padding: 10px 24px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 15px;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .btn-secondary:hover {
+            background-color: #f8fafc;
+            border-color: #cbd5e1;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        /* Navigation */
+        .nav-link {
+            color: #64748b;
+            font-weight: 500;
+            font-size: 14px;
+            transition: color 0.2s;
+            text-decoration: none;
+        }
+        .nav-link:hover {
+            color: #1a1a1a;
+            text-decoration: underline;
+            text-underline-offset: 4px;
+        }
+
+        /* Cards */
+        .feature-card {
+            border: 1px solid #e2e8f0;
+            padding: 2.5rem;
+            border-radius: 8px;
+            transition: all 0.2s;
+            background: white;
+        }
+        .feature-card:hover {
+            border-color: #cbd5e1;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            transform: translateY(-2px);
+        }
+
+        /* Utilities */
+        .text-balance {
+            text-wrap: balance;
         }
     </style>
 </head>
-<body class="bg-gray-50 text-gray-800 h-screen overflow-hidden">
-    <div id="root" class="h-full"></div>
+<body>
 
-    <!-- Main Application Logic -->
-    <script type="text/babel" src="app.jsx"></script>
+    <!-- Navigation -->
+    <nav class="border-b border-slate-200 bg-white/95 backdrop-blur-sm sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-12">
+                <a href="#" class="text-xl font-bold tracking-tight text-slate-900 no-underline">X.IDE</a>
+                <div class="hidden md:flex items-center gap-8">
+                    <a href="#features" class="nav-link">Features</a>
+                    <a href="#templates" class="nav-link">Templates</a>
+                    <a href="#pricing" class="nav-link">Pricing</a>
+                </div>
+            </div>
+            <div class="flex items-center gap-4">
+                <a href="builder.html" class="text-sm font-semibold text-slate-900 hover:underline hidden sm:block">Sign In</a>
+                <a href="builder.html" class="btn-primary text-sm py-2 px-4">Launch Builder</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <div class="max-w-7xl mx-auto px-6 pt-24 pb-20">
+        <div class="grid lg:grid-cols-2 gap-12 items-center">
+            <div class="max-w-2xl">
+                <div class="inline-block px-3 py-1 mb-6 text-xs font-semibold tracking-wider text-blue-600 uppercase bg-blue-50 rounded-full">
+                    New Release v2.0
+                </div>
+                <h1 class="text-5xl md:text-6xl font-bold text-slate-900 tracking-tight mb-6 leading-[1.1] text-balance">
+                    Build landing pages for your business.
+                </h1>
+                <p class="text-xl text-slate-600 mb-10 max-w-lg leading-relaxed">
+                    The professional drag-and-drop builder designed for performance. Create high-converting pages without writing code.
+                </p>
+                <div class="flex flex-col sm:flex-row gap-4">
+                    <a href="builder.html" class="btn-primary">Start Building Free</a>
+                    <a href="#demo" class="btn-secondary">View Demo</a>
+                </div>
+                <div class="mt-8 text-sm text-slate-500 flex items-center gap-4">
+                    <span>No credit card required</span>
+                    <span class="w-1 h-1 bg-slate-300 rounded-full"></span>
+                    <span>Free tier available</span>
+                </div>
+            </div>
+            <div class="relative hidden lg:block">
+                <div class="absolute -inset-4 bg-gradient-to-tr from-slate-100 to-slate-50 rounded-full blur-3xl opacity-60 -z-10"></div>
+                <div class="bg-white rounded-lg border border-slate-200 shadow-2xl overflow-hidden transform rotate-1 hover:rotate-0 transition-transform duration-500">
+                    <div class="h-8 bg-slate-50 border-b border-slate-200 flex items-center px-4 gap-2">
+                        <div class="w-3 h-3 rounded-full bg-slate-300"></div>
+                        <div class="w-3 h-3 rounded-full bg-slate-300"></div>
+                        <div class="w-3 h-3 rounded-full bg-slate-300"></div>
+                    </div>
+                    <img src="https://placehold.co/800x600/f8fafc/cbd5e1?text=Builder+Canvas" alt="Builder Interface" class="w-full block">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Features Grid -->
+    <div id="features" class="bg-slate-50 py-24 border-t border-slate-200">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="mb-16 text-center max-w-3xl mx-auto">
+                <h2 class="text-3xl font-bold text-slate-900 mb-4">Designed for productivity</h2>
+                <p class="text-lg text-slate-600">Everything you need to build and deploy, streamlined into one powerful interface.</p>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-8">
+                <!-- Feature 1 -->
+                <div class="feature-card">
+                    <div class="w-10 h-10 bg-slate-100 rounded flex items-center justify-center mb-6 text-slate-900 font-bold">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
+                    </div>
+                    <h3 class="text-lg font-bold text-slate-900 mb-3">Visual Editor</h3>
+                    <p class="text-slate-600 leading-relaxed">
+                        Drag, drop, and customize elements on a free-form canvas. What you see is exactly what you get.
+                    </p>
+                </div>
+
+                <!-- Feature 2 -->
+                <div class="feature-card">
+                    <div class="w-10 h-10 bg-slate-100 rounded flex items-center justify-center mb-6 text-slate-900 font-bold">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>
+                    </div>
+                    <h3 class="text-lg font-bold text-slate-900 mb-3">Responsive by Default</h3>
+                    <p class="text-slate-600 leading-relaxed">
+                        Pages automatically adapt to mobile, tablet, and desktop screens without extra configuration.
+                    </p>
+                </div>
+
+                <!-- Feature 3 -->
+                <div class="feature-card">
+                    <div class="w-10 h-10 bg-slate-100 rounded flex items-center justify-center mb-6 text-slate-900 font-bold">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+                    </div>
+                    <h3 class="text-lg font-bold text-slate-900 mb-3">Clean Code Export</h3>
+                    <p class="text-slate-600 leading-relaxed">
+                        Download your work as semantic HTML and JSON. No lock-in, host anywhere you want.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CTA Section -->
+    <div class="py-24 bg-white border-t border-slate-200">
+        <div class="max-w-4xl mx-auto px-6 text-center">
+            <h2 class="text-3xl font-bold text-slate-900 mb-6">Ready to get started?</h2>
+            <p class="text-lg text-slate-600 mb-10">Join the community of professionals building with X.IDE.</p>
+            <a href="builder.html" class="btn-primary text-lg px-8 py-3">
+                Launch Builder
+            </a>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-slate-50 border-t border-slate-200 py-12">
+        <div class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
+            <div class="flex items-center gap-2">
+                <span class="text-slate-900 font-bold text-lg">X.IDE</span>
+            </div>
+            <div class="text-slate-500 text-sm">
+                &copy; 2025 X.IDE Builder. All rights reserved.
+            </div>
+            <div class="flex gap-8 text-sm font-medium text-slate-500">
+                <a href="#" class="hover:text-slate-900 transition-colors">Privacy</a>
+                <a href="#" class="hover:text-slate-900 transition-colors">Terms</a>
+                <a href="#" class="hover:text-slate-900 transition-colors">Contact</a>
+            </div>
+        </div>
+    </footer>
+
 </body>
 </html>
