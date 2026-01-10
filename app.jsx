@@ -1065,14 +1065,25 @@ const CheckoutModal = ({ isOpen, onClose, product, onPurchase, settings, leanxSe
                             })
                         });
                         const data = await res.json();
-                        if (data.status === 'OK' || data.data) {
-                             // Correctly parsing standard LeanX response structure (usually data array is directly inside or nested)
+                        // Improved Error Handling and Response Parsing
+                        if (data.status === 'OK' || (data.data && Array.isArray(data.data))) {
                              const bankList = Array.isArray(data.data) ? data.data : [];
-                             setBanks(bankList);
+                             
+                             if (bankList.length > 0) {
+                                setBanks(bankList);
+                             } else {
+                                setErrorMessage("API connected, but returned no banks. Check your Auth Token permissions or try a different mode.");
+                                setBanks([]); // Clear banks to show error
+                             }
                         } else {
-                             // Fallback Mock Data if API fails/invalid auth
-                             console.warn("API returned invalid status, using mock data", data);
-                             setBanks(MOCK_BANKS);
+                             // Fallback or Error Display
+                             console.warn("API returned invalid status", data);
+                             if (data.message) {
+                                 setErrorMessage(`API Error: ${data.message}`);
+                                 setBanks([]); // Don't show mocks if we have a real API error
+                             } else {
+                                 setBanks(MOCK_BANKS);
+                             }
                         }
                     } else {
                         setBanks(MOCK_BANKS);
@@ -1203,6 +1214,12 @@ const CheckoutModal = ({ isOpen, onClose, product, onPurchase, settings, leanxSe
                         )}
 
                         <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto custom-scrollbar p-1">
+                            {banks.length === 0 && !loading && !errorMessage && (
+                                <div className="col-span-2 text-center py-8 text-gray-400">
+                                    <i className="ri-bank-card-line text-3xl mb-2"></i>
+                                    <p className="text-sm">No payment methods available.</p>
+                                </div>
+                            )}
                             {banks.map(bank => (
                                 <button
                                     key={bank.payment_service_id}
