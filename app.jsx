@@ -1052,84 +1052,89 @@ const CheckoutModal = ({ isOpen, onClose, product, onPurchase, settings, leanxSe
                 try {
                     // Try to fetch from real API if credentials exist
                     if (leanxSettings.authToken) {
-                        const payload = {
-                            payment_type: leanxSettings.paymentType || "WEB_PAYMENT",
-                            payment_status: "active",
-                            payment_model_reference_id: leanxSettings.paymentModel || 1 
-                        };
                         const apiUrl = leanxSettings.mode === 'live' 
                             ? 'https://api.leanx.io/api/v1/merchant/list-payment-services' 
-                            : 'https://api.leanx.io/api/v1/merchant/list-payment-services'; // TODO: Update if Sandbox URL is different
+                            : 'https://api.leanx.io/api/v1/merchant/list-payment-services'; 
 
-                        console.log(`[${leanxSettings.mode.toUpperCase()}] Request to ${apiUrl}:`, JSON.stringify(payload, null, 2));
+                        // We will try to fetch multiple combinations to auto-detect what is available
+                        // Combinations: FPX (WEB_PAYMENT) & B2C/B2B, E-Wallet (DIGITAL_PAYMENT) & B2C/B2B
+                        const combinations = [
+                            { type: 'WEB_PAYMENT', model: 1, label: 'B2C' },
+                            { type: 'WEB_PAYMENT', model: 2, label: 'B2B' },
+                            { type: 'DIGITAL_PAYMENT', model: 1, label: 'B2C' },
+                            { type: 'DIGITAL_PAYMENT', model: 2, label: 'B2B' }
+                        ];
 
-                        const res = await fetch(apiUrl, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'auth-token': leanxSettings.authToken
-                            },
-                            body: JSON.stringify(payload)
-                        });
-                        const data = await res.json();
-                        
-                        console.log("List Payment Services Response:", JSON.stringify(data, null, 2));
+                        let allBanks = [];
+                        let apiErrors = [];
 
-                        // Try to find the array of banks in likely locations
-                        let bankList = [];
-                        if (Array.isArray(data)) {
-                            bankList = data;
-                        } else if (data.data && Array.isArray(data.data)) {
-                            bankList = data.data;
-                        } else if (data.data && data.data.payment_services && Array.isArray(data.data.payment_services)) {
-                            bankList = data.data.payment_services; 
-                        } else if (data.data && data.data.list && data.data.list.data && Array.isArray(data.data.list.data)) {
-                             // Handle deeply nested B2B structure: data.list.data[0].WEB_PAYMENT
-                             const firstItem = data.data.list.data[0];
-                             if (firstItem && Array.isArray(firstItem.WEB_PAYMENT)) {
-                                 bankList = firstItem.WEB_PAYMENT;
-                             } else if (firstItem && Array.isArray(firstItem.DIGITAL_PAYMENT)) {
-                                 bankList = firstItem.DIGITAL_PAYMENT;
-                             } else if (firstItem && Array.isArray(firstItem.GLOBAL_CARD_PAYMENT)) {
-                                 bankList = firstItem.GLOBAL_CARD_PAYMENT;
+                        // Execute all fetches in parallel
+                        await Promise.all(combinations.map(async (combo) => {
+                             try {
+                                 const payload = {
+                                     payment_type: combo.type,
+                                     payment_status: "active",
+                                     payment_model_reference_id: combo.model
+                                 };
+                                 
+                                 const res = await fetch(apiUrl, {
+                                     method: 'POST',
+                                     headers: {
+                                         'Content-Type': 'application/json',
+                                         'auth-token': leanxSettings.authToken
+                                     },
+                                     body: JSON.stringify(payload)
+                                 });
+                                 const data = await res.json();
+                                 
+                                 // Extract banks based on deep parsing logic
+                                 let extracted = [];
+                                 if (data.status === 'OK' || data.status === 'SUCCESS' || data.response_code === 2000) {
+                                      // Standard Array
+                                      if (Array.isArray(data.data)) extracted = data.data;
+                                      else if (data.data?.payment_services && Array.isArray(data.data.payment_services)) extracted = data.data.payment_services;
+                                      // Deep Nested List (B2B/Live)
+                                      else if (data.data?.list?.data && Array.isArray(data.data.list.data)) {
+                                          const firstItem = data.data.list.data[0];
+                                          if (firstItem) {
+                                              if (combo.type === 'WEB_PAYMENT' && Array.isArray(firstItem.WEB_PAYMENT)) extracted = firstItem.WEB_PAYMENT;
+                                              else if (combo.type === 'DIGITAL_PAYMENT' && Array.isArray(firstItem.DIGITAL_PAYMENT)) extracted = firstItem.DIGITAL_PAYMENT;
+                                          }
+                                      }
+                                 } else {
+                                     if(data.description) apiErrors.push(data.description);
+                                 }
+
+                                 if (extracted.length > 0) {
+                                     // Normalize and tag with source info for later use
+                                     const tagged = extracted.map(b => ({
+                                         payment_service_id: b.payment_service_id,
+                                         payment_service_name: b.name || b.payment_service_name,
+                                         type: combo.type, // Important for checkout
+                                         icon: combo.type === 'WEB_PAYMENT' ? 'ri-bank-line' : 'ri-wallet-3-line'
+                                     }));
+                                     allBanks = [...allBanks, ...tagged];
+                                 }
+
+                             } catch (err) {
+                                 console.warn(`Failed to fetch combo ${combo.type}-${combo.model}`, err);
                              }
-                        }
-
-                        // Map Backend Fields to UI Fields (Standardize Names)
-                        // Backend uses: name, payment_service_id
-                        // Frontend expects: payment_service_name, payment_service_id
-                        const normalizedBanks = bankList.map(b => ({
-                            payment_service_id: b.payment_service_id,
-                            payment_service_name: b.name || b.payment_service_name // Handle 'name' vs 'payment_service_name'
                         }));
 
-                        // Check for Success Indicators
-                        const isSuccess = data.status === 'OK' || data.status === 'SUCCESS' || data.response_code === 2000;
+                        // Deduplicate (just in case same bank appears in multiple lists, though unlikely with distinct IDs)
+                        const uniqueBanks = Array.from(new Map(allBanks.map(item => [item.payment_service_id, item])).values());
 
-                        if (isSuccess || normalizedBanks.length > 0) {
-                             if (normalizedBanks.length > 0) {
-                                setBanks(normalizedBanks);
-                             } else {
-                                // Specific Guidance based on common issues
-                                let hint = "Check if 'WEB_PAYMENT' is enabled in your Lean.x Portal.";
-                                if(leanxSettings.mode === 'test') hint += " Are you using Test/Sandbox keys?";
-                                if(leanxSettings.mode === 'live') hint += " Are you using Production keys?";
-                                
-                                setErrorMessage(`API Connected (Success), but found 0 active banks. ${hint}`);
-                                setBanks([]); 
-                             }
+                        if (uniqueBanks.length > 0) {
+                             setBanks(uniqueBanks);
                         } else {
-                             // Failure
-                             console.warn("API returned invalid status", data);
-                             const errorMsg = data.description || data.message || data.breakdown_errors || "Unknown API Error";
-                             
-                             // Detect Auth Issues explicitly
-                             if (errorMsg.toLowerCase().includes('token') || errorMsg.toLowerCase().includes('auth') || data.response_code === 401 || data.response_code === 10018) { // 10018 often implies service not allowed/active for this token
-                                 setErrorMessage(`Authentication Error: The API rejected your credentials. Message: ${errorMsg}`);
+                             // If completely empty, show error
+                             const errorMsg = apiErrors.length > 0 ? apiErrors[0] : "No active payment channels found.";
+                             if (apiErrors.some(e => e.includes('token') || e.includes('auth'))) {
+                                 setErrorMessage(`Authentication Failed: ${errorMsg}`);
                              } else {
-                                 setErrorMessage(`API Error: ${errorMsg}`);
+                                 setErrorMessage(`API Connected (Success), but found 0 active banks across all channels. Check your Lean.x Portal.`);
                              }
-                             setBanks([]); 
+                             setBanks([]);
                         }
                     } else {
                         setBanks(MOCK_BANKS);
@@ -1137,7 +1142,7 @@ const CheckoutModal = ({ isOpen, onClose, product, onPurchase, settings, leanxSe
                 } catch (e) {
                     console.error("LeanX Fetch Error:", e);
                     setErrorMessage(`Network Error: ${e.message}`);
-                    setBanks([]); // FORCE EMPTY LIST on network error
+                    setBanks([]); 
                 } finally {
                     setLoading(false);
                 }
@@ -1280,8 +1285,11 @@ const CheckoutModal = ({ isOpen, onClose, product, onPurchase, settings, leanxSe
                                             : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50 text-gray-700'
                                         }`}
                                 >
-                                    <i className="ri-bank-line text-lg opacity-70"></i>
-                                    {bank.payment_service_name}
+                                    <i className={`${bank.icon || 'ri-bank-line'} text-lg opacity-70`}></i>
+                                    <div className="text-left">
+                                        <div className="leading-tight">{bank.payment_service_name}</div>
+                                        {bank.type && <div className="text-[10px] uppercase tracking-wider opacity-60 mt-0.5">{bank.type.replace('_', ' ')}</div>}
+                                    </div>
                                 </button>
                             ))}
                         </div>
@@ -1827,29 +1835,6 @@ const PaymentsPanel = ({ settings, onUpdate, onTestCheckout }) => {
                                         onChange={(e) => updateField('collectionUuid', e.target.value)}
                                         placeholder="Dc-..."
                                     />
-                                </div>
-                                <div>
-                                    <label className="form-label">Payment Channel</label>
-                                    <select 
-                                        className="form-select"
-                                        value={settings.paymentType || 'WEB_PAYMENT'}
-                                        onChange={(e) => updateField('paymentType', e.target.value)}
-                                    >
-                                        <option value="WEB_PAYMENT">FPX (Online Banking)</option>
-                                        <option value="DIGITAL_PAYMENT">E-Wallet</option>
-                                        <option value="GLOBAL_CARD_PAYMENT">Credit/Debit Card</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className="form-label">Business Model</label>
-                                    <select 
-                                        className="form-select"
-                                        value={settings.paymentModel || 1}
-                                        onChange={(e) => updateField('paymentModel', parseInt(e.target.value))}
-                                    >
-                                        <option value={1}>B2C (Retail)</option>
-                                        <option value={2}>B2B (Corporate)</option>
-                                    </select>
                                 </div>
                             </div>
                             
