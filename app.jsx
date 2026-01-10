@@ -1772,7 +1772,7 @@ const FunnelPanel = ({ settings, onUpdate }) => {
     );
 };
 
-const PaymentsPanel = ({ settings, onUpdate, onTestCheckout, onSave }) => {
+const PaymentsPanel = ({ settings, onUpdate, onSave, onTestCheckout }) => {
     // Helper to update specific fields
     const updateField = (key, value) => {
         onUpdate({ ...settings, [key]: value });
@@ -1786,10 +1786,10 @@ const PaymentsPanel = ({ settings, onUpdate, onTestCheckout, onSave }) => {
                     <div className="flex gap-2">
                         <button 
                             onClick={onSave}
-                            className="btn-secondary flex items-center gap-2 px-4 py-2 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50"
+                            className="btn-secondary bg-white text-gray-700 hover:bg-gray-50 border border-gray-200 shadow-sm flex items-center gap-2 px-4 py-2 rounded-lg"
                         >
                             <i className="ri-save-line text-lg"></i>
-                            Save Credentials
+                            Save Settings
                         </button>
                         <button 
                             onClick={onTestCheckout}
@@ -1945,7 +1945,6 @@ const App = () => {
     const [funnelSettings, setFunnelSettings] = useState(DEFAULT_FUNNEL_SETTINGS);
     const [previewMode, setPreviewMode] = useState(false);
 
-    // Lean.x Integration Settings
     const [leanxSettings, setLeanxSettings] = useState(() => {
         const saved = localStorage.getItem('leanxSettings');
         return saved ? JSON.parse(saved) : {
@@ -1953,16 +1952,18 @@ const App = () => {
             authToken: '',
             collectionUuid: '',
             hashKey: '',
-            mode: 'test',
+            mode: 'live', // Default to Live as requested by usage context
             paymentType: 'WEB_PAYMENT',
             paymentModel: 1
         };
     });
 
+    // Save Settings Handler
     const handleSaveLeanxSettings = () => {
         localStorage.setItem('leanxSettings', JSON.stringify(leanxSettings));
-        alert("Payment credentials saved!");
+        alert("Credentials saved successfully!");
     };
+
 
     // Funnel State
     const [checkoutOpen, setCheckoutOpen] = useState(false);
