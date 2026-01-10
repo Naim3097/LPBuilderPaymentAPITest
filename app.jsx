@@ -1059,7 +1059,7 @@ const CheckoutModal = ({ isOpen, onClose, product, onPurchase, settings, leanxSe
                                 'auth-token': leanxSettings.authToken
                             },
                             body: JSON.stringify({
-                                payment_type: "WEB_PAYMENT",
+                                payment_type: leanxSettings.paymentType || "WEB_PAYMENT",
                                 payment_status: "active",
                                 payment_model_reference_id: 1 // B2C
                             })
@@ -1792,6 +1792,17 @@ const PaymentsPanel = ({ settings, onUpdate, onTestCheckout }) => {
                                         onChange={(e) => updateField('collectionUuid', e.target.value)}
                                         placeholder="Dc-..."
                                     />
+                                <div>
+                                    <label className="form-label">Payment Channel</label>
+                                    <select 
+                                        className="form-select"
+                                        value={settings.paymentType || 'WEB_PAYMENT'}
+                                        onChange={(e) => updateField('paymentType', e.target.value)}
+                                    >
+                                        <option value="WEB_PAYMENT">FPX (Online Banking)</option>
+                                        <option value="DIGITAL_PAYMENT">E-Wallet</option>
+                                        <option value="GLOBAL_CARD_PAYMENT">Credit/Debit Card</option>
+                                    </select>
                                 </div>
                             </div>
                             
@@ -1898,7 +1909,8 @@ const App = () => {
         authToken: '',
         collectionUuid: '',
         hashKey: '',
-        mode: 'test'
+        mode: 'test',
+        paymentType: 'WEB_PAYMENT'
     });
 
     // Funnel State
