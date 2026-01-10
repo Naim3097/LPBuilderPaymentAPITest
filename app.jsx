@@ -1109,7 +1109,8 @@ const CheckoutModal = ({ isOpen, onClose, product, onPurchase, settings, leanxSe
                                      // Normalize and tag with source info for later use
                                      const tagged = extracted.map(b => ({
                                          payment_service_id: b.payment_service_id,
-                                         payment_service_name: b.name || b.payment_service_name,
+                                         // Clean up "B2B" suffix from names for cleaner UI
+                                         payment_service_name: (b.name || b.payment_service_name).replace(/ B2B$/i, '').trim(),
                                          type: combo.type, // Important for checkout
                                          icon: combo.type === 'WEB_PAYMENT' ? 'ri-bank-line' : 'ri-wallet-3-line'
                                      }));
