@@ -1066,24 +1066,35 @@ const CheckoutModal = ({ isOpen, onClose, product, onPurchase, settings, leanxSe
                         });
                         const data = await res.json();
                         
-                        console.log("List Payment Services Response:", JSON.stringify(data, null, 2));
+                        console.log("List Payment Services Request Data:", data);
 
-                        // Improved Error Handling and Response Parsing
-                        if (data.status === 'OK' || (data.data && Array.isArray(data.data))) {
-                             const bankList = Array.isArray(data.data) ? data.data : [];
-                             
+                        // Try to find the array of banks in likely locations
+                        let bankList = [];
+                        if (Array.isArray(data)) {
+                            bankList = data;
+                        } else if (data.data && Array.isArray(data.data)) {
+                            bankList = data.data;
+                        } else if (data.data && data.data.payment_services && Array.isArray(data.data.payment_services)) {
+                            // Some versions might nest it here
+                            bankList = data.data.payment_services; 
+                        }
+
+                        // Check for Success Indicators
+                        const isSuccess = data.status === 'OK' || data.status === 'SUCCESS' || data.response_code === 2000;
+
+                        if (isSuccess || bankList.length > 0) {
                              if (bankList.length > 0) {
                                 setBanks(bankList);
                              } else {
-                                setErrorMessage("API connected, but returned no banks. Check your Auth Token permissions or try a different mode.");
+                                setErrorMessage("API Connected (Success), but found 0 active banks. Check if 'WEB_PAYMENT' is enabled in your Lean.x Portal.");
                                 setBanks([]); 
                              }
                         } else {
-                             // Fallback or Error Display
+                             // Failure
                              console.warn("API returned invalid status", data);
                              const errorMsg = data.description || data.message || data.breakdown_errors || "Unknown API Error";
                              setErrorMessage(`API Error: ${errorMsg}`);
-                             setBanks([]); // FORCE EMPTY LIST on error - do NOT show mocks
+                             setBanks([]); 
                         }
                     } else {
                         setBanks(MOCK_BANKS);
