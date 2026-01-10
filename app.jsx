@@ -1792,6 +1792,7 @@ const PaymentsPanel = ({ settings, onUpdate, onTestCheckout }) => {
                                         onChange={(e) => updateField('collectionUuid', e.target.value)}
                                         placeholder="Dc-..."
                                     />
+                                </div>
                                 <div>
                                     <label className="form-label">Payment Channel</label>
                                     <select 
