@@ -1138,6 +1138,9 @@ const CheckoutModal = ({ isOpen, onClose, product, onPurchase, settings, leanxSe
             });
 
             const data = await res.json();
+            
+            // Debugging: Log full response
+            console.log("Create Bill Response:", JSON.stringify(data, null, 2));
 
             if (data.status === 'OK' || (data.data && data.data.redirect_url)) {
                  if (data.data && data.data.redirect_url) {
@@ -1150,7 +1153,8 @@ const CheckoutModal = ({ isOpen, onClose, product, onPurchase, settings, leanxSe
                 alert(`Redirecting to ${selectedBank.payment_service_name} (Simulated)\nURL: ${data.data?.redirect_url || 'https://payment.leanx.io/...'}`);
                 onPurchase({ ...product, total, bump }); 
             } else {
-                 setErrorMessage(`Payment Gateway Error: ${data.message || 'Unknown error'}`);
+                 const msg = data.message || (data.error && data.error.message) || 'Unknown error';
+                 setErrorMessage(`Payment Gateway Error: ${msg}. Check console for details.`);
             }
 
         } catch (e) {
