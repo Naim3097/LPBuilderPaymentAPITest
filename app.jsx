@@ -1082,16 +1082,33 @@ const CheckoutModal = ({ isOpen, onClose, product, onPurchase, settings, leanxSe
                         } else if (data.data && Array.isArray(data.data)) {
                             bankList = data.data;
                         } else if (data.data && data.data.payment_services && Array.isArray(data.data.payment_services)) {
-                            // Some versions might nest it here
                             bankList = data.data.payment_services; 
+                        } else if (data.data && data.data.list && data.data.list.data && Array.isArray(data.data.list.data)) {
+                             // Handle deeply nested B2B structure: data.list.data[0].WEB_PAYMENT
+                             const firstItem = data.data.list.data[0];
+                             if (firstItem && Array.isArray(firstItem.WEB_PAYMENT)) {
+                                 bankList = firstItem.WEB_PAYMENT;
+                             } else if (firstItem && Array.isArray(firstItem.DIGITAL_PAYMENT)) {
+                                 bankList = firstItem.DIGITAL_PAYMENT;
+                             } else if (firstItem && Array.isArray(firstItem.GLOBAL_CARD_PAYMENT)) {
+                                 bankList = firstItem.GLOBAL_CARD_PAYMENT;
+                             }
                         }
+
+                        // Map Backend Fields to UI Fields (Standardize Names)
+                        // Backend uses: name, payment_service_id
+                        // Frontend expects: payment_service_name, payment_service_id
+                        const normalizedBanks = bankList.map(b => ({
+                            payment_service_id: b.payment_service_id,
+                            payment_service_name: b.name || b.payment_service_name // Handle 'name' vs 'payment_service_name'
+                        }));
 
                         // Check for Success Indicators
                         const isSuccess = data.status === 'OK' || data.status === 'SUCCESS' || data.response_code === 2000;
 
-                        if (isSuccess || bankList.length > 0) {
-                             if (bankList.length > 0) {
-                                setBanks(bankList);
+                        if (isSuccess || normalizedBanks.length > 0) {
+                             if (normalizedBanks.length > 0) {
+                                setBanks(normalizedBanks);
                              } else {
                                 // Specific Guidance based on common issues
                                 let hint = "Check if 'WEB_PAYMENT' is enabled in your Lean.x Portal.";
