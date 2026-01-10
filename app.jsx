@@ -1052,21 +1052,24 @@ const CheckoutModal = ({ isOpen, onClose, product, onPurchase, settings, leanxSe
                 try {
                     // Try to fetch from real API if credentials exist
                     if (leanxSettings.authToken) {
+                        const payload = {
+                            payment_type: leanxSettings.paymentType || "WEB_PAYMENT",
+                            payment_status: "active",
+                            payment_model_reference_id: leanxSettings.paymentModel || 1 
+                        };
+                        console.log("List Payment Services Request:", payload);
+
                         const res = await fetch('https://api.leanx.io/api/v1/merchant/list-payment-services', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
                                 'auth-token': leanxSettings.authToken
                             },
-                            body: JSON.stringify({
-                                payment_type: leanxSettings.paymentType || "WEB_PAYMENT",
-                                payment_status: "active",
-                                payment_model_reference_id: 1 // B2C
-                            })
+                            body: JSON.stringify(payload)
                         });
                         const data = await res.json();
                         
-                        console.log("List Payment Services Request Data:", data);
+                        console.log("List Payment Services Response:", data);
 
                         // Try to find the array of banks in likely locations
                         let bankList = [];
@@ -1805,6 +1808,17 @@ const PaymentsPanel = ({ settings, onUpdate, onTestCheckout }) => {
                                         <option value="GLOBAL_CARD_PAYMENT">Credit/Debit Card</option>
                                     </select>
                                 </div>
+                                <div>
+                                    <label className="form-label">Business Model</label>
+                                    <select 
+                                        className="form-select"
+                                        value={settings.paymentModel || 1}
+                                        onChange={(e) => updateField('paymentModel', parseInt(e.target.value))}
+                                    >
+                                        <option value={1}>B2C (Retail)</option>
+                                        <option value={2}>B2B (Corporate)</option>
+                                    </select>
+                                </div>
                             </div>
                             
                             <div>
@@ -1911,7 +1925,8 @@ const App = () => {
         collectionUuid: '',
         hashKey: '',
         mode: 'test',
-        paymentType: 'WEB_PAYMENT'
+        paymentType: 'WEB_PAYMENT',
+        paymentModel: 1
     });
 
     // Funnel State
