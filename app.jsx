@@ -1065,6 +1065,9 @@ const CheckoutModal = ({ isOpen, onClose, product, onPurchase, settings, leanxSe
                             })
                         });
                         const data = await res.json();
+                        
+                        console.log("List Payment Services Response:", JSON.stringify(data, null, 2));
+
                         // Improved Error Handling and Response Parsing
                         if (data.status === 'OK' || (data.data && Array.isArray(data.data))) {
                              const bankList = Array.isArray(data.data) ? data.data : [];
@@ -1073,25 +1076,22 @@ const CheckoutModal = ({ isOpen, onClose, product, onPurchase, settings, leanxSe
                                 setBanks(bankList);
                              } else {
                                 setErrorMessage("API connected, but returned no banks. Check your Auth Token permissions or try a different mode.");
-                                setBanks([]); // Clear banks to show error
+                                setBanks([]); 
                              }
                         } else {
                              // Fallback or Error Display
                              console.warn("API returned invalid status", data);
-                             if (data.message) {
-                                 setErrorMessage(`API Error: ${data.message}`);
-                                 setBanks([]); // Don't show mocks if we have a real API error
-                             } else {
-                                 setBanks(MOCK_BANKS);
-                             }
+                             const errorMsg = data.description || data.message || data.breakdown_errors || "Unknown API Error";
+                             setErrorMessage(`API Error: ${errorMsg}`);
+                             setBanks([]); // FORCE EMPTY LIST on error - do NOT show mocks
                         }
                     } else {
                         setBanks(MOCK_BANKS);
                     }
                 } catch (e) {
                     console.error("LeanX Fetch Error:", e);
-                    // Fallback to offline mock mode for demo purposes
-                    setBanks(MOCK_BANKS);
+                    setErrorMessage(`Network Error: ${e.message}`);
+                    setBanks([]); // FORCE EMPTY LIST on network error
                 } finally {
                     setLoading(false);
                 }
