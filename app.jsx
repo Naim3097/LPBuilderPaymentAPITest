@@ -1772,7 +1772,7 @@ const FunnelPanel = ({ settings, onUpdate }) => {
     );
 };
 
-const PaymentsPanel = ({ settings, onUpdate, onTestCheckout }) => {
+const PaymentsPanel = ({ settings, onUpdate, onTestCheckout, onSave }) => {
     // Helper to update specific fields
     const updateField = (key, value) => {
         onUpdate({ ...settings, [key]: value });
@@ -1783,13 +1783,22 @@ const PaymentsPanel = ({ settings, onUpdate, onTestCheckout }) => {
             <div className="max-w-3xl mx-auto space-y-6">
                 <div className="flex justify-between items-center">
                     <h2 className="text-xl font-bold text-gray-900">Payment Settings</h2>
-                    <button 
-                        onClick={onTestCheckout}
-                        className="btn-primary bg-indigo-600 hover:bg-indigo-700 shadow-lg flex items-center gap-2 px-4 py-2 rounded-lg"
-                    >
-                        <i className="ri-play-circle-line text-lg"></i>
-                        Launch Test Checkout
-                    </button>
+                    <div className="flex gap-2">
+                        <button 
+                            onClick={onSave}
+                            className="btn-secondary flex items-center gap-2 px-4 py-2 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-50"
+                        >
+                            <i className="ri-save-line text-lg"></i>
+                            Save Credentials
+                        </button>
+                        <button 
+                            onClick={onTestCheckout}
+                            className="btn-primary bg-indigo-600 hover:bg-indigo-700 shadow-lg flex items-center gap-2 px-4 py-2 rounded-lg"
+                        >
+                            <i className="ri-play-circle-line text-lg"></i>
+                            Launch Test Checkout
+                        </button>
+                    </div>
                 </div>
                 
                 <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
@@ -1937,15 +1946,23 @@ const App = () => {
     const [previewMode, setPreviewMode] = useState(false);
 
     // Lean.x Integration Settings
-    const [leanxSettings, setLeanxSettings] = useState({
-        enabled: true,
-        authToken: '',
-        collectionUuid: '',
-        hashKey: '',
-        mode: 'test',
-        paymentType: 'WEB_PAYMENT',
-        paymentModel: 1
+    const [leanxSettings, setLeanxSettings] = useState(() => {
+        const saved = localStorage.getItem('leanxSettings');
+        return saved ? JSON.parse(saved) : {
+            enabled: true,
+            authToken: '',
+            collectionUuid: '',
+            hashKey: '',
+            mode: 'test',
+            paymentType: 'WEB_PAYMENT',
+            paymentModel: 1
+        };
     });
+
+    const handleSaveLeanxSettings = () => {
+        localStorage.setItem('leanxSettings', JSON.stringify(leanxSettings));
+        alert("Payment credentials saved!");
+    };
 
     // Funnel State
     const [checkoutOpen, setCheckoutOpen] = useState(false);
@@ -2184,7 +2201,14 @@ const App = () => {
 
                         {activeTab === 'templates' && <TemplateGallery onSelectTemplate={handleLoadTemplate} />}
                         {activeTab === 'funnel' && <FunnelPanel settings={funnelSettings} onUpdate={setFunnelSettings} />}
-                        {activeTab === 'payments' && <PaymentsPanel settings={leanxSettings} onUpdate={setLeanxSettings} onTestCheckout={() => handleOpenCheckout({ label: 'Test Product', price: 'RM10.00' })} />}
+                        {activeTab === 'payments' && (
+                            <PaymentsPanel 
+                                settings={leanxSettings} 
+                                onUpdate={setLeanxSettings} 
+                                onSave={handleSaveLeanxSettings}
+                                onTestCheckout={() => handleOpenCheckout({ label: 'Test Product', price: 'RM10.00' })} 
+                            />
+                        )}
                         {activeTab === 'analytics' && <AnalyticsPanel />}
                         {activeTab === 'inventory' && <InventoryPanel />}
                         {activeTab === 'integrations' && <IntegrationsPanel />}
