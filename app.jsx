@@ -1089,14 +1089,25 @@ const CheckoutModal = ({ isOpen, onClose, product, onPurchase, settings, leanxSe
                              if (bankList.length > 0) {
                                 setBanks(bankList);
                              } else {
-                                setErrorMessage("API Connected (Success), but found 0 active banks. Check if 'WEB_PAYMENT' is enabled in your Lean.x Portal.");
+                                // Specific Guidance based on common issues
+                                let hint = "Check if 'WEB_PAYMENT' is enabled in your Lean.x Portal.";
+                                if(leanxSettings.mode === 'test') hint += " Are you using Test/Sandbox keys?";
+                                if(leanxSettings.mode === 'live') hint += " Are you using Production keys?";
+                                
+                                setErrorMessage(`API Connected (Success), but found 0 active banks. ${hint}`);
                                 setBanks([]); 
                              }
                         } else {
                              // Failure
                              console.warn("API returned invalid status", data);
                              const errorMsg = data.description || data.message || data.breakdown_errors || "Unknown API Error";
-                             setErrorMessage(`API Error: ${errorMsg}`);
+                             
+                             // Detect Auth Issues explicitly
+                             if (errorMsg.toLowerCase().includes('token') || errorMsg.toLowerCase().includes('auth') || data.response_code === 401 || data.response_code === 10018) { // 10018 often implies service not allowed/active for this token
+                                 setErrorMessage(`Authentication Error: The API rejected your credentials. Message: ${errorMsg}`);
+                             } else {
+                                 setErrorMessage(`API Error: ${errorMsg}`);
+                             }
                              setBanks([]); 
                         }
                     } else {
@@ -1835,7 +1846,7 @@ const PaymentsPanel = ({ settings, onUpdate, onTestCheckout }) => {
                             <div>
                                 <label className="form-label">Hash Key</label>
                                 <input 
-                                    type="password" 
+                                    type="text" 
                                     className="form-input font-mono text-sm" 
                                     value={settings.hashKey}
                                     onChange={(e) => updateField('hashKey', e.target.value)}
