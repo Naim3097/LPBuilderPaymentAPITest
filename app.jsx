@@ -1057,9 +1057,13 @@ const CheckoutModal = ({ isOpen, onClose, product, onPurchase, settings, leanxSe
                             payment_status: "active",
                             payment_model_reference_id: leanxSettings.paymentModel || 1 
                         };
-                        console.log("List Payment Services Request:", payload);
+                        const apiUrl = leanxSettings.mode === 'live' 
+                            ? 'https://api.leanx.io/api/v1/merchant/list-payment-services' 
+                            : 'https://api.leanx.io/api/v1/merchant/list-payment-services'; // TODO: Update if Sandbox URL is different
 
-                        const res = await fetch('https://api.leanx.io/api/v1/merchant/list-payment-services', {
+                        console.log(`[${leanxSettings.mode.toUpperCase()}] Request to ${apiUrl}:`, JSON.stringify(payload, null, 2));
+
+                        const res = await fetch(apiUrl, {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
@@ -1069,7 +1073,7 @@ const CheckoutModal = ({ isOpen, onClose, product, onPurchase, settings, leanxSe
                         });
                         const data = await res.json();
                         
-                        console.log("List Payment Services Response:", data);
+                        console.log("List Payment Services Response:", JSON.stringify(data, null, 2));
 
                         // Try to find the array of banks in likely locations
                         let bankList = [];
