@@ -1938,7 +1938,7 @@ const SettingsPanel = () => (
 
 // --- MAIN APP ---
 
-const PaymentResultView = ({ status, onGoHome, onRetry }) => {
+const PaymentResultView = ({ status, debugInfo, onGoHome, onRetry }) => {
     const isSuccess = status === 'success';
     return (
         <div className="fixed inset-0 z-50 bg-gray-50 flex items-center justify-center p-4">
@@ -1957,6 +1957,13 @@ const PaymentResultView = ({ status, onGoHome, onRetry }) => {
                         : 'We could not process your payment. Please try again or use a different payment method.'
                     }
                 </p>
+
+                {!isSuccess && debugInfo && (
+                    <div className="mb-6 p-3 bg-gray-100 rounded text-left text-xs font-mono overflow-auto max-h-32">
+                        <p className="font-bold mb-1">Debug Info:</p>
+                        <pre>{JSON.stringify(debugInfo, null, 2)}</pre>
+                    </div>
+                )}
 
                 <div className="space-y-3">
                     {isSuccess ? (
@@ -1987,17 +1994,27 @@ const App = () => {
     const [funnelSettings, setFunnelSettings] = useState(DEFAULT_FUNNEL_SETTINGS);
     const [previewMode, setPreviewMode] = useState(false);
     const [paymentStatus, setPaymentStatus] = useState(null);
+    const [debugParams, setDebugParams] = useState(null);
 
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
         if (params.get('payment_return') === 'true') {
+            const allParams = {};
+            for (const [key, value] of params.entries()) {
+                allParams[key] = value;
+            }
+            // Capture all params for debugging
+            setDebugParams(allParams);
+
             // Check various common success indicators from gateways
-            const status = params.get('status') || params.get('bill_status') || params.get('response_code') || '';
-            // 2000 is Lean.x API code, but redirect callback often uses 'status_id=1' (success) or 'status=1'
+            // Added status_id which is common for Lean.x (1 = success, 2 = pending, 3 = failed)
+            const status = params.get('status') || params.get('bill_status') || params.get('response_code') || params.get('status_id') || '';
+            
             // We check for '1', 'success', '00', '2000'
             const isSuccess = ['1', '00', 'success', 'SUCCESS', '2000'].some(s => status.includes(s));
             setPaymentStatus(isSuccess ? 'success' : 'failed');
-            // Clean URL
+            
+            // Clean URL but keep params in state
             window.history.replaceState({}, document.title, window.location.pathname);
         }
     }, []);
@@ -2185,6 +2202,7 @@ const App = () => {
         return (
             <PaymentResultView 
                 status={paymentStatus}
+                debugInfo={debugParams}
                 onGoHome={() => setPaymentStatus(null)}
                 onRetry={() => setPaymentStatus(null)}
             />
