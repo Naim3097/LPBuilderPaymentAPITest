@@ -1168,11 +1168,16 @@ const CheckoutModal = ({ isOpen, onClose, product, onPurchase, settings, leanxSe
         try {
             // Prepare the payload for Create Silent Bill
             const origin = window.location.origin;
+            const invoiceRef = `INV-${Date.now()}`;
+            
+            // Store ref for manual check later (since redirect might drop params)
+            localStorage.setItem('last_leanx_invoice', invoiceRef);
+
             const payload = {
                 collection_uuid: leanxSettings.collectionUuid,
                 payment_service_id: selectedBank.payment_service_id,
                 amount: total.toFixed(2),
-                invoice_ref: `INV-${Date.now()}`,
+                invoice_ref: invoiceRef,
                 full_name: "Demo User", // In a real app, collect these from inputs
                 email: "demo@user.com",
                 phone_number: "0123456789",
@@ -1996,29 +2001,6 @@ const App = () => {
     const [paymentStatus, setPaymentStatus] = useState(null);
     const [debugParams, setDebugParams] = useState(null);
 
-    useEffect(() => {
-        const params = new URLSearchParams(window.location.search);
-        if (params.get('payment_return') === 'true') {
-            const allParams = {};
-            for (const [key, value] of params.entries()) {
-                allParams[key] = value;
-            }
-            // Capture all params for debugging
-            setDebugParams(allParams);
-
-            // Check various common success indicators from gateways
-            // Added status_id which is common for Lean.x (1 = success, 2 = pending, 3 = failed)
-            const status = params.get('status') || params.get('bill_status') || params.get('response_code') || params.get('status_id') || '';
-            
-            // We check for '1', 'success', '00', '2000'
-            const isSuccess = ['1', '00', 'success', 'SUCCESS', '2000'].some(s => status.includes(s));
-            setPaymentStatus(isSuccess ? 'success' : 'failed');
-            
-            // Clean URL but keep params in state
-            window.history.replaceState({}, document.title, window.location.pathname);
-        }
-    }, []);
-
     const [leanxSettings, setLeanxSettings] = useState(() => {
         const saved = localStorage.getItem('leanxSettings');
         return saved ? JSON.parse(saved) : {
@@ -2031,6 +2013,67 @@ const App = () => {
             paymentModel: 1
         };
     });
+
+    useEffect(() => {
+        const checkPayment = async () => {
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('payment_return') === 'true') {
+                const allParams = {};
+                for (const [key, value] of params.entries()) {
+                    allParams[key] = value;
+                }
+                setDebugParams(allParams);
+
+                // 1. Try URL Params First
+                const status = params.get('status') || params.get('bill_status') || params.get('response_code') || params.get('status_id') || '';
+                const isSuccess = ['1', '00', 'success', 'SUCCESS', '2000'].some(s => status.includes(s));
+                
+                if (isSuccess) {
+                    setPaymentStatus('success');
+                } else if (!status && localStorage.getItem('last_leanx_invoice')) {
+                    // 2. Fallback: Manual API Check (if no status in URL)
+                    try {
+                        const invoiceNo = localStorage.getItem('last_leanx_invoice');
+                        console.log("Verifying Invoice:", invoiceNo);
+                        
+                        // We need to use POST method as per documentation
+                        const verifyUrl = `https://api.leanx.io/api/v1/merchant/manual-checking-transaction?invoice_no=${invoiceNo}`;
+                        
+                        const res = await fetch(verifyUrl, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'auth-token': leanxSettings.authToken // We use current settings
+                            }
+                        });
+                        
+                        const data = await res.json();
+                        setDebugParams(prev => ({ ...prev, manual_check_response: data }));
+
+                        // Check deep verify response
+                        // Structure: data.data.transaction_details.invoice_status = "SUCCESS"
+                        if (data?.data?.transaction_details?.invoice_status === 'SUCCESS' || data?.status === 'OK') {
+                             setPaymentStatus('success');
+                        } else {
+                             setPaymentStatus('failed');
+                             // Keep debug info showing
+                        }
+                    } catch (e) {
+                        console.error("Verification failed", e);
+                        setDebugParams(prev => ({ ...prev, manual_check_error: e.message }));
+                        setPaymentStatus('failed'); 
+                    }
+                } else {
+                    setPaymentStatus('failed');
+                }
+                
+                // Clean URL but keep params in state
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+        };
+
+        checkPayment();
+    }, [leanxSettings.authToken]); // Depend on authToken so we can use it in the verify call
 
     // Save Settings Handler
     const handleSaveLeanxSettings = () => {
