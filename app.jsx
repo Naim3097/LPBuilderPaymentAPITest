@@ -1176,7 +1176,8 @@ const CheckoutModal = ({ isOpen, onClose, product, onPurchase, settings, leanxSe
                 full_name: "Demo User", // In a real app, collect these from inputs
                 email: "demo@user.com",
                 phone_number: "0123456789",
-                redirect_url: `${origin}/success.html`,
+                // Redirect back to this same app, but with a flag we can detect on load
+                redirect_url: window.location.href.split('?')[0] + '?payment_return=true',
                 callback_url: `${origin}/api/callback` 
             };
 
@@ -1937,6 +1938,47 @@ const SettingsPanel = () => (
 
 // --- MAIN APP ---
 
+const PaymentResultView = ({ status, onGoHome, onRetry }) => {
+    const isSuccess = status === 'success';
+    return (
+        <div className="fixed inset-0 z-50 bg-gray-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-8 text-center animate-fade-in">
+                <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 ${isSuccess ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
+                    <i className={`${isSuccess ? 'ri-check-line' : 'ri-close-line'} text-4xl`}></i>
+                </div>
+                
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                    {isSuccess ? 'Payment Successful!' : 'Payment Failed'}
+                </h2>
+                
+                <p className="text-gray-600 mb-8">
+                    {isSuccess 
+                        ? 'Thank you for your purchase. Your transaction has been completed successfully.'
+                        : 'We could not process your payment. Please try again or use a different payment method.'
+                    }
+                </p>
+
+                <div className="space-y-3">
+                    {isSuccess ? (
+                        <button onClick={onGoHome} className="btn-primary w-full justify-center py-3">
+                            Return to Builder
+                        </button>
+                    ) : (
+                        <>
+                            <button onClick={onRetry} className="btn-primary w-full justify-center py-3">
+                                Try Again
+                            </button>
+                            <button onClick={onGoHome} className="text-gray-500 hover:text-gray-700 text-sm font-medium">
+                                Cancel & Return
+                            </button>
+                        </>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+};
+
 const App = () => {
     const [activeTab, setActiveTab] = useState('builder');
     const [device, setDevice] = useState('desktop');
@@ -1944,6 +1986,21 @@ const App = () => {
     const [selectedId, setSelectedId] = useState(null);
     const [funnelSettings, setFunnelSettings] = useState(DEFAULT_FUNNEL_SETTINGS);
     const [previewMode, setPreviewMode] = useState(false);
+    const [paymentStatus, setPaymentStatus] = useState(null);
+
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('payment_return') === 'true') {
+            // Check various common success indicators from gateways
+            const status = params.get('status') || params.get('bill_status') || params.get('response_code') || '';
+            // 2000 is Lean.x API code, but redirect callback often uses 'status_id=1' (success) or 'status=1'
+            // We check for '1', 'success', '00', '2000'
+            const isSuccess = ['1', '00', 'success', 'SUCCESS', '2000'].some(s => status.includes(s));
+            setPaymentStatus(isSuccess ? 'success' : 'failed');
+            // Clean URL
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+    }, []);
 
     const [leanxSettings, setLeanxSettings] = useState(() => {
         const saved = localStorage.getItem('leanxSettings');
@@ -2123,6 +2180,16 @@ const App = () => {
     };
 
     const selectedElement = elements.find(el => el.id === selectedId);
+
+    if (paymentStatus) {
+        return (
+            <PaymentResultView 
+                status={paymentStatus}
+                onGoHome={() => setPaymentStatus(null)}
+                onRetry={() => setPaymentStatus(null)}
+            />
+        );
+    }
 
     if (previewMode) {
         return (
