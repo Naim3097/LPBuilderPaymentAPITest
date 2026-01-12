@@ -2292,7 +2292,7 @@ const App = () => {
                                 settings={leanxSettings} 
                                 onUpdate={setLeanxSettings} 
                                 onSave={handleSaveLeanxSettings}
-                                onTestCheckout={() => handleOpenCheckout({ label: 'Test Product', price: 'RM10.00' })} 
+                                onTestCheckout={() => handleOpenCheckout({ label: 'Test Product', price: 'RM1.00' })} 
                             />
                         )}
                         {activeTab === 'analytics' && <AnalyticsPanel />}
