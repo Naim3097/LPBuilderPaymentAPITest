@@ -147,6 +147,13 @@ if (data.data.transaction_details.invoice_status === 'SUCCESS') {
 }
 ```
 
+### 4.3 Payment Result UI (Success/Fail)
+Once the status is confirmed, the application overlays a dedicated result view (`PaymentResultView`) over the builder interface:
+
+*   **Success State:** Displays a green success icon and a "Return to Builder" button. This confirms money has been received.
+*   **Failure State:** Displays a red error icon and a "Try Again" button.
+*   **Debug Feature:** Crucially, the Failure screen includes a **Debug Info** box. This displays the raw JSON data from the verification process (e.g., specific error messages from the bank or Lean.x), allowing developers to diagnose issues like "Insufficient Funds" or "Cancelled by User" immediately.
+
 ---
 
 ## 5. Troubleshooting & Status Codes
